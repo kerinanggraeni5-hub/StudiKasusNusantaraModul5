@@ -1,7 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../cubit/pengajuan_cubit.dart';
 import '../models/pengajuan_model.dart';
 
 class StatistikLayananPage extends StatelessWidget {
@@ -9,149 +10,153 @@ class StatistikLayananPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<PengajuanModel>();
-    final pengajuan = model.daftarPengajuanDetail;
+    return BlocBuilder<PengajuanCubit, List<Pengajuan>>(
+      builder: (context, pengajuan) {
+        final jumlahMenunggu = pengajuan
+            .where((item) => item.status == 'Menunggu')
+            .length;
 
-    final jumlahMenunggu =
-        pengajuan.where((item) => item.status == 'Menunggu').length;
-    final jumlahSelesai =
-        pengajuan.where((item) => item.status == 'Selesai').length;
+        final jumlahSelesai = pengajuan
+            .where((item) => item.status == 'Selesai')
+            .length;
 
-    final total = pengajuan.length;
+        final total = pengajuan.length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Statistik Layanan',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Ringkasan Pengajuan',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Statistik Layanan',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            Row(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _KartuStatistik(
-                    judul: 'Total Pengajuan',
-                    jumlah: total,
-                    warna: Colors.blue,
-                    ikon: Icons.description_outlined,
+                const Text(
+                  'Ringkasan Pengajuan',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _KartuStatistik(
-                    judul: 'Menunggu',
-                    jumlah: jumlahMenunggu,
-                    warna: Colors.orange,
-                    ikon: Icons.hourglass_empty,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _KartuStatistik(
-              judul: 'Selesai',
-              jumlah: jumlahSelesai,
-              warna: Colors.green,
-              ikon: Icons.check_circle_outline,
-            ),
-            const SizedBox(height: 28),
-            const Text(
-              'Grafik Status Pengajuan',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Grafik menunjukkan jumlah pengajuan berdasarkan statusnya.',
-              style: TextStyle(color: Colors.black54),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 280,
-              child: BarChart(
-                BarChartData(
-                  minY: 0,
-                maxY: _batasAtas(
-                  jumlahMenunggu,
-                  jumlahSelesai,
-                ).toDouble(), // dia tuh butuh nilai bertipe double
-                  alignment: BarChartAlignment.spaceEvenly,
-                  barGroups: [
-                    _buatGrup(0, jumlahMenunggu, Colors.orange),
-                    _buatGrup(1, jumlahSelesai, Colors.green),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _KartuStatistik(
+                        judul: 'Total Pengajuan',
+                        jumlah: total,
+                        warna: Colors.blue,
+                        ikon: Icons.description_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _KartuStatistik(
+                        judul: 'Menunggu',
+                        jumlah: jumlahMenunggu,
+                        warna: Colors.orange,
+                        ikon: Icons.hourglass_empty,
+                      ),
+                    ),
                   ],
-                  gridData: const FlGridData(show: true),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 36,
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) {
-                          String judul;
-
-                          if (value.toInt() == 0) {
-                            judul = 'Menunggu';
-                          } else if (value.toInt() == 1) {
-                            judul = 'Selesai';
-                          } else {
-                            judul = '';
-                          }
-
-                         return SideTitleWidget(
-                          meta: meta, //menggunakan parameter meta
-                          child: Text(
-                            judul,
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        );
-                        },
-                      ),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                _KartuStatistik(
+                  judul: 'Selesai',
+                  jumlah: jumlahSelesai,
+                  warna: Colors.green,
+                  ikon: Icons.check_circle_outline,
+                ),
+                const SizedBox(height: 28),
+                const Text(
+                  'Grafik Status Pengajuan',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            if (total == 0)
-              const Center(
-                child: Text(
-                  'Belum ada pengajuan untuk ditampilkan.',
+                const SizedBox(height: 8),
+                const Text(
+                  'Grafik menunjukkan jumlah pengajuan berdasarkan statusnya.',
                   style: TextStyle(color: Colors.black54),
                 ),
-              ),
-          ],
-        ),
-      ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  height: 280,
+                  child: BarChart(
+                    BarChartData(
+                      minY: 0,
+                      maxY: _batasAtas(
+                        jumlahMenunggu,
+                        jumlahSelesai,
+                      ).toDouble(),
+                      alignment: BarChartAlignment.spaceEvenly,
+                      barGroups: [
+                        _buatGrup(0, jumlahMenunggu, Colors.orange),
+                        _buatGrup(1, jumlahSelesai, Colors.green),
+                      ],
+                      gridData: const FlGridData(show: true),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 36,
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              String judul;
+
+                              if (value.toInt() == 0) {
+                                judul = 'Menunggu';
+                              } else if (value.toInt() == 1) {
+                                judul = 'Selesai';
+                              } else {
+                                judul = '';
+                              }
+
+                              return SideTitleWidget(
+                                meta: meta,
+                                child: Text(
+                                  judul,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (total == 0)
+                  const Center(
+                    child: Text(
+                      'Belum ada pengajuan untuk ditampilkan.',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

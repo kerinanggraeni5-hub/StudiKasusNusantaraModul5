@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../models/favorit_model.dart';
+import '../cubit/favorit_cubit.dart';
 import '../navigation/app_routes.dart';
 
 class LayananPage extends StatelessWidget {
@@ -13,7 +13,6 @@ class LayananPage extends StatelessWidget {
       length: 3,
       child: Column(
         children: [
-          // Header
           const Padding(
             padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
             child: Align(
@@ -40,10 +39,7 @@ class LayananPage extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 10),
-
-          // Tab Bar
           const TabBar(
             tabs: [
               Tab(
@@ -60,14 +56,12 @@ class LayananPage extends StatelessWidget {
               ),
             ],
           ),
-
-          // Isi Tab
           Expanded(
             child: TabBarView(
               children: [
-                _daftarPerizinan(context),
-                _daftarKesehatan(context),
-                _daftarTransportasi(context),
+                _daftarPerizinan(),
+                _daftarKesehatan(),
+                _daftarTransportasi(),
               ],
             ),
           ),
@@ -76,8 +70,8 @@ class LayananPage extends StatelessWidget {
     );
   }
 
-  Widget _daftarPerizinan(BuildContext context) {
-    final List<Map<String, String>> layanan = [
+  Widget _daftarPerizinan() {
+    final layanan = <Map<String, String>>[
       {
         'nama': 'Izin Usaha',
         'dinas': 'Dinas Penanaman Modal dan Pelayanan Terpadu',
@@ -101,11 +95,11 @@ class LayananPage extends StatelessWidget {
       },
     ];
 
-    return _buatDaftarLayanan(context, layanan);
+    return _buatDaftarLayanan(layanan);
   }
 
-  Widget _daftarKesehatan(BuildContext context) {
-    final List<Map<String, String>> layanan = [
+  Widget _daftarKesehatan() {
+    final layanan = <Map<String, String>>[
       {
         'nama': 'Pendaftaran Puskesmas',
         'dinas': 'Dinas Kesehatan Kota',
@@ -129,11 +123,11 @@ class LayananPage extends StatelessWidget {
       },
     ];
 
-    return _buatDaftarLayanan(context, layanan);
+    return _buatDaftarLayanan(layanan);
   }
 
-  Widget _daftarTransportasi(BuildContext context) {
-    final List<Map<String, String>> layanan = [
+  Widget _daftarTransportasi() {
+    final layanan = <Map<String, String>>[
       {
         'nama': 'Kartu Transportasi',
         'dinas': 'Dinas Perhubungan Kota',
@@ -157,11 +151,10 @@ class LayananPage extends StatelessWidget {
       },
     ];
 
-    return _buatDaftarLayanan(context, layanan);
+    return _buatDaftarLayanan(layanan);
   }
 
   Widget _buatDaftarLayanan(
-    BuildContext context,
     List<Map<String, String>> layanan,
   ) {
     return ListView.builder(
@@ -171,10 +164,6 @@ class LayananPage extends StatelessWidget {
         final item = layanan[index];
         final namaLayanan = item['nama']!;
 
-        // Memantau perubahan status favorit
-        final favoritModel = context.watch<FavoritModel>();
-        final isFavorit = favoritModel.isFavorit(namaLayanan);
-
         return Card(
           margin: const EdgeInsets.only(bottom: 14),
           elevation: 2,
@@ -183,7 +172,6 @@ class LayananPage extends StatelessWidget {
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.all(16),
-
             leading: Container(
               width: 50,
               height: 50,
@@ -196,7 +184,6 @@ class LayananPage extends StatelessWidget {
                 color: Colors.blue,
               ),
             ),
-
             title: Text(
               namaLayanan,
               style: const TextStyle(
@@ -204,46 +191,42 @@ class LayananPage extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
-
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                item['dinas']!,
-              ),
+              child: Text(item['dinas']!),
             ),
-
-            // Tombol favorit dan detail
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                IconButton(
-                  tooltip: isFavorit
-                      ? 'Hapus dari favorit'
-                      : 'Tambah ke favorit',
-                  icon: Icon(
-                    isFavorit ? Icons.star : Icons.star_border,
-                    color: isFavorit ? Colors.amber : Colors.grey,
-                  ),
-                  onPressed: () {
-                    if (isFavorit) {
-                      context
-                          .read<FavoritModel>()
-                          .batalTandai(namaLayanan);
-                    } else {
-                      context
-                          .read<FavoritModel>()
-                          .tandai(namaLayanan);
-                    }
+                BlocBuilder<FavoritCubit, Set<String>>(
+                  builder: (context, daftarFavorit) {
+                    final isFavorit =
+                        daftarFavorit.contains(namaLayanan);
+
+                    return IconButton(
+                      tooltip: isFavorit
+                          ? 'Hapus dari favorit'
+                          : 'Tambah ke favorit',
+                      icon: Icon(
+                        isFavorit ? Icons.star : Icons.star_border,
+                        color: isFavorit
+                            ? Colors.amber
+                            : Colors.grey,
+                      ),
+                      onPressed: () {
+                        context
+                            .read<FavoritCubit>()
+                            .ubahFavorit(namaLayanan);
+                      },
+                    );
                   },
                 ),
-
                 const Icon(
                   Icons.arrow_forward_ios,
                   size: 18,
                 ),
               ],
             ),
-
             onTap: () async {
               final hasil = await Navigator.pushNamed(
                 context,
